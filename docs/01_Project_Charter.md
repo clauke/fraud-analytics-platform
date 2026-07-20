@@ -56,7 +56,7 @@ O projeto contempla:
 * Ingestão dos dados do dataset IEEE-CIS Fraud Detection.
 * Processos de ETL utilizando Python.
 * Automatização de cargas utilizando SSIS.
-* Armazenamento em SQL Server Express.
+* Armazenamento em SQL Server.
 * Construção do Data Warehouse.
 * Desenvolvimento de modelos preditivos.
 * Construção de dashboards em Power BI.
