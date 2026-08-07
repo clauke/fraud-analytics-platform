@@ -1,4 +1,4 @@
-
+![Fraud Analytics Platform](assets/logos/fraud_analytics_banner.png)
 
 # Fraud Analytics Platform
 
