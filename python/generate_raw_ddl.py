@@ -66,14 +66,10 @@ def generate_table_ddl(csv_file, table_name):
     csv_path = RAW_DIR / csv_file
 
     if not csv_path.exists():
-        raise FileNotFoundError(
-            f"Arquivo não encontrado: {csv_path}"
-        )
+        raise FileNotFoundError(f"Arquivo não encontrado: {csv_path}")
 
     print(f"Lendo metadata: {csv_file}")
 
-    # Apenas o cabeçalho e algumas linhas são suficientes
-    # para inferência inicial dos tipos.
     df = pd.read_csv(
         csv_path,
         nrows=1000,
@@ -84,16 +80,34 @@ def generate_table_ddl(csv_file, table_name):
 
     for column in df.columns:
 
-        dtype = map_dtype(df[column].dtype)
+        # Regras específicas para colunas importantes
+        if column == "TransactionID":
+            sql_type = "BIGINT"
+            nullable = "NOT NULL"
 
-        # Proteção contra nomes inválidos no SQL Server
+        elif column == "isFraud":
+            sql_type = "BIT"
+            nullable = "NULL"
+
+        elif column == "TransactionAmt":
+            sql_type = "DECIMAL(18,4)"
+            nullable = "NULL"
+
+        elif column == "TransactionDT":
+            sql_type = "BIGINT"
+            nullable = "NULL"
+
+        else:
+            sql_type = map_dtype(df[column].dtype)
+            nullable = "NULL"
+
         column_name = column.replace("]", "]]")
 
         columns.append(
-            f"        [{column_name}] {dtype} NULL"
+            f"        [{column_name}] {sql_type} {nullable}"
         )
 
-    columns_sql = ",\\n".join(columns)
+    columns_sql = ",\n".join(columns)
 
     ddl = f"""
 /* ============================================================================
@@ -115,6 +129,8 @@ GO
 """
 
     return ddl
+
+
 
 # =============================================================================
 # 4. GERAÇÃO DO ARQUIVO SQL
