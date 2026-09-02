@@ -112,29 +112,53 @@ def load_transactions(batch_id):
         print("-" * 70)
         print(f"Origem: {SCHEMA_STG}.{source_table}")
 
-        query = f"""
-            SELECT
-                TransactionID,
-                TransactionDT,
-                TransactionAmt,
-                ProductCD,
-                card1,
-                card2,
-                card3,
-                card4,
-                card5,
-                card6,
-                addr1,
-                addr2,
-                dist1,
-                dist2,
-                P_emaildomain,
-                R_emaildomain,
-                DeviceType,
-                DeviceInfo,
-                isFraud
-            FROM {SCHEMA_STG}.{source_table}
-        """
+        if source_table == "train_transaction":
+
+            query = f"""
+                SELECT
+                    TransactionID,
+                    TransactionDT,
+                    TransactionAmt,
+                    ProductCD,
+                    card1,
+                    card2,
+                    card3,
+                    card4,
+                    card5,
+                    card6,
+                    addr1,
+                    addr2,
+                    dist1,
+                    dist2,
+                    P_emaildomain,
+                    R_emaildomain,
+                    isFraud
+                FROM {SCHEMA_STG}.{source_table}
+            """
+
+        else:
+
+            query = f"""
+                SELECT
+                    TransactionID,
+                    TransactionDT,
+                    TransactionAmt,
+                    ProductCD,
+                    card1,
+                    card2,
+                    card3,
+                    card4,
+                    card5,
+                    card6,
+                    addr1,
+                    addr2,
+                    dist1,
+                    dist2,
+                    P_emaildomain,
+                    R_emaildomain,
+                    CAST(NULL AS bit) AS isFraud
+                FROM {SCHEMA_STG}.{source_table}
+            """
 
         df = pd.read_sql(query, engine)
         rows = len(df)
@@ -151,8 +175,35 @@ def load_transactions(batch_id):
 
         df["source_file"] = f"{source_table}.csv"
         df["batch_id"] = batch_id
-        df["etl_status"] = "LOADED"
         df["load_date"] = datetime.now().replace(microsecond=0)
+        df["etl_status"] = "LOADED"
+
+        # Garantir a mesma ordem da tabela ODS
+        ods_columns = [
+            "TransactionID",
+            "TransactionDT",
+            "TransactionAmt",
+            "ProductCD",
+            "card1",
+            "card2",
+            "card3",
+            "card4",
+            "card5",
+            "card6",
+            "addr1",
+            "addr2",
+            "dist1",
+            "dist2",
+            "P_emaildomain",
+            "R_emaildomain",
+            "isFraud",
+            "source_file",
+            "batch_id",
+            "load_date",
+            "etl_status",
+        ]
+
+        df = df[ods_columns]
 
         # ---------------------------------------------------------------------
         # Carga
