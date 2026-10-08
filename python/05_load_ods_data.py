@@ -2,6 +2,7 @@
 ===============================================================================
 Fraud Analytics Platform
 Carga STG -> ODS
+Versão: 0.2
 
 Objetivo:
     Consolidar os dados das tabelas STG na camada ODS.
@@ -33,6 +34,7 @@ from sqlalchemy.engine import URL
 SERVER = r"DESKTOP-R90TA06\SQL2022"
 DATABASE = "FraudAnalytics"
 
+SCHEMA_RAW = "raw"
 SCHEMA_STG = "stg"
 SCHEMA_ODS = "ods"
 
@@ -170,6 +172,14 @@ def load_transactions(batch_id):
             continue
 
         # ---------------------------------------------------------------------
+        # Data source
+        # --------------------------------------------------------------------- 
+        
+        if source_table == "train_transaction": 
+            df["data_source"] = "train" 
+        else: df["data_source"] = "test"
+
+        # ---------------------------------------------------------------------
         # Metadados ETL
         # ---------------------------------------------------------------------
 
@@ -178,7 +188,10 @@ def load_transactions(batch_id):
         df["load_date"] = datetime.now().replace(microsecond=0)
         df["etl_status"] = "LOADED"
 
-        # Garantir a mesma ordem da tabela ODS
+        # --------------------------------------------------------------------- 
+        # Ordem das colunas da ODS 
+        # ---------------------------------------------------------------------
+
         ods_columns = [
             "TransactionID",
             "TransactionDT",
@@ -194,9 +207,12 @@ def load_transactions(batch_id):
             "addr2",
             "dist1",
             "dist2",
+
             "P_emaildomain",
             "R_emaildomain",
             "isFraud",
+
+            "data_source",
             "source_file",
             "batch_id",
             "load_date",
@@ -240,14 +256,18 @@ def load_transactions(batch_id):
 
 def load_identities(batch_id):
     """
-    Consolida train_identity e test_identity
-    em ods.identities.
+    Consolida train_identity e test_identity em ods.identities.
+
+    Estratégia:
+        - id_01 a id_38: origem RAW
+        - DeviceType e DeviceInfo: origem STG
+        - Chave de integração: TransactionID
     """
 
     target_table = "identities"
 
     print("-" * 70)
-    print("STG -> ODS: identities")
+    print("RAW + STG -> ODS: identities")
 
     start_time = time.time()
 
@@ -258,12 +278,110 @@ def load_identities(batch_id):
     for source_table in IDENTITY_SOURCES:
 
         print("-" * 70)
-        print(f"Origem: {SCHEMA_STG}.{source_table}")
+        print(f"RAW: {SCHEMA_RAW}.{source_table}")
+        print(f"STG: {SCHEMA_STG}.{source_table}")
 
-        query = f"""
-            SELECT *
-            FROM {SCHEMA_STG}.{source_table}
-        """
+        if source_table == "train_identity":
+
+            query = f"""
+                SELECT
+                    r.TransactionID,
+
+                    r.id_01,
+                    r.id_02,
+                    r.id_03,
+                    r.id_04,
+                    r.id_05,
+                    r.id_06,
+                    r.id_07,
+                    r.id_08,
+                    r.id_09,
+                    r.id_10,
+                    r.id_11,
+                    r.id_12,
+                    r.id_13,
+                    r.id_14,
+                    r.id_15,
+                    r.id_16,
+                    r.id_17,
+                    r.id_18,
+                    r.id_19,
+                    r.id_20,
+                    r.id_21,
+                    r.id_22,
+                    r.id_23,
+                    r.id_24,
+                    r.id_25,
+                    r.id_26,
+                    r.id_27,
+                    r.id_28,
+                    r.id_29,
+                    r.id_30,
+                    r.id_31,
+                    r.id_32,
+                    r.id_33,
+                    r.id_34,
+                    r.id_35,
+                    r.id_36,
+                    r.id_37,
+                    r.id_38,
+                    s.DeviceType,
+                    s.DeviceInfo
+
+                FROM {SCHEMA_RAW}.{source_table} r
+                LEFT JOIN {SCHEMA_STG}.{source_table} s
+                    ON r.TransactionID = s.TransactionID
+            """
+
+        else:
+
+            query = f"""
+                SELECT
+                    r.TransactionID,
+                    r.[id-01] AS id_01,
+                    r.[id-02] AS id_02,
+                    r.[id-03] AS id_03,
+                    r.[id-04] AS id_04,
+                    r.[id-05] AS id_05,
+                    r.[id-06] AS id_06,
+                    r.[id-07] AS id_07,
+                    r.[id-08] AS id_08,
+                    r.[id-09] AS id_09,
+                    r.[id-10] AS id_10,
+                    r.[id-11] AS id_11,
+                    r.[id-12] AS id_12,
+                    r.[id-13] AS id_13,
+                    r.[id-14] AS id_14,
+                    r.[id-15] AS id_15,
+                    r.[id-16] AS id_16,
+                    r.[id-17] AS id_17,
+                    r.[id-18] AS id_18,
+                    r.[id-19] AS id_19,
+                    r.[id-20] AS id_20,
+                    r.[id-21] AS id_21,
+                    r.[id-22] AS id_22,
+                    r.[id-23] AS id_23,
+                    r.[id-24] AS id_24,
+                    r.[id-25] AS id_25,
+                    r.[id-26] AS id_26,
+                    r.[id-27] AS id_27,
+                    r.[id-28] AS id_28,
+                    r.[id-29] AS id_29,
+                    r.[id-30] AS id_30,
+                    r.[id-31] AS id_31,
+                    r.[id-32] AS id_32,
+                    r.[id-33] AS id_33,
+                    r.[id-34] AS id_34,
+                    r.[id-35] AS id_35,
+                    r.[id-36] AS id_36,
+                    r.[id-37] AS id_37,
+                    r.[id-38] AS id_38,
+                    s.DeviceType,
+                    s.DeviceInfo
+                FROM {SCHEMA_RAW}.{source_table} r
+                LEFT JOIN {SCHEMA_STG}.{source_table} s
+                    ON r.TransactionID = s.TransactionID
+            """
 
         df = pd.read_sql(query, engine)
 
@@ -275,8 +393,25 @@ def load_identities(batch_id):
             print("Nenhum registro encontrado.")
             continue
 
+        # --------------------------------------------------------------------- 
+        # Data source 
+        # --------------------------------------------------------------------- 
+        
+        if source_table == "train_identity": 
+            df["data_source"] = "train" 
+        else: df["data_source"] = "test"
+
         # ---------------------------------------------------------------------
-        # Selecionar somente as colunas existentes na tabela ODS
+        # Metadados ETL
+        # ---------------------------------------------------------------------
+
+        df["source_file"] = f"{source_table}.csv"
+        df["batch_id"] = batch_id
+        df["etl_status"] = "LOADED"
+        df["load_date"] = datetime.now().replace(microsecond=0)
+
+        # ---------------------------------------------------------------------
+        # Ordem das colunas da ODS
         # ---------------------------------------------------------------------
 
         ods_columns = [
@@ -292,7 +427,6 @@ def load_identities(batch_id):
             "id_08",
             "id_09",
             "id_10",
-
             "id_11",
             "id_12",
             "id_13",
@@ -303,7 +437,6 @@ def load_identities(batch_id):
             "id_18",
             "id_19",
             "id_20",
-
             "id_21",
             "id_22",
             "id_23",
@@ -314,7 +447,6 @@ def load_identities(batch_id):
             "id_28",
             "id_29",
             "id_30",
-
             "id_31",
             "id_32",
             "id_33",
@@ -326,23 +458,15 @@ def load_identities(batch_id):
 
             "DeviceType",
             "DeviceInfo",
+
+            "data_source",
+            "source_file",
+            "batch_id",
+            "load_date",
+            "etl_status",
         ]
 
-        existing_columns = [
-            col for col in ods_columns
-            if col in df.columns
-        ]
-
-        df = df[existing_columns]
-
-        # ---------------------------------------------------------------------
-        # Metadados ETL
-        # ---------------------------------------------------------------------
-
-        df["source_file"] = f"{source_table}.csv"
-        df["batch_id"] = batch_id
-        df["etl_status"] = "LOADED"
-        df["load_date"] = datetime.now().replace(microsecond=0)
+        df = df[ods_columns]
 
         # ---------------------------------------------------------------------
         # Carga
