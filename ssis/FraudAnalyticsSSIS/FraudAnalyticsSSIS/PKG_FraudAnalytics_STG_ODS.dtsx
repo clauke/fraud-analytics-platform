@@ -1,0 +1,78 @@
+﻿<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationDate="10/22/2026 9:48:53 AM"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorComputerName="DESKTOP-R90TA06"
+  DTS:CreatorName="DESKTOP-R90TA06\USUARIO"
+  DTS:DTSID="{12935297-16BA-43D0-B089-6FF79F11BC35}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="17.0.1016.0"
+  DTS:LocaleID="1046"
+  DTS:ObjectName="PKG_FraudAnalytics_STG_ODS"
+  DTS:PackageType="5"
+  DTS:VersionBuild="5"
+  DTS:VersionGUID="{2A5CA854-7CF8-43AE-BE56-5715098F6450}">
+  <DTS:Property
+    DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:ConnectionManagers>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[DESKTOP-R90TA06\SQL2022.FraudAnalytics.sa]"
+      DTS:CreationName="OLEDB"
+      DTS:DTSID="{74F6E003-871B-4F2B-824E-B3280ED8C9F5}"
+      DTS:ObjectName="DESKTOP-R90TA06\SQL2022.FraudAnalytics.sa">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectRetryCount="1"
+          DTS:ConnectRetryInterval="5"
+          DTS:ConnectionString="Data Source=DESKTOP-R90TA06\SQL2022;User ID=sa;Initial Catalog=FraudAnalytics;Provider=SQLOLEDB.1;Application Name=SSIS-PKG_FraudAnalytics_STG_ODS-{74F6E003-871B-4F2B-824E-B3280ED8C9F5}DESKTOP-R90TA06\SQL2022.FraudAnalytics.sa;Auto Translate=False;">
+          <DTS:Password
+            DTS:Name="Password"
+            Sensitive="1"
+            Encrypted="1">AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAApbB+JSMr3k6VwwABDSjWMwAAAAAIAAAARABUAFMAAAAQZgAAAAEAACAAAABp5TpnnMAf9BaAjO6F7+65HJXisHCwpHZsIUbRp0ncLAAAAAAOgAAAAAIAACAAAADoJSLgIJVQsGVjMeJrF/xzGXCtBgixEoeHyoMy5nL5fSAAAABNJBgOjUL2vPnDfLt2J7mOPm3bwLEKwIJlEEae0+TQUUAAAADQn6GQ0kot6XrWBTg5cF0Qfa/Z8Frv+lA2uDi4jgCx+Cxsrf0sj6CSDjHwjt7hIhSv+A0ldVps6bjMqV4nuB/d</DTS:Password>
+        </DTS:ConnectionManager>
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+  </DTS:ConnectionManagers>
+  <DTS:Variables />
+  <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\Tarefa Executar Processo"
+      DTS:CreationName="Microsoft.ExecuteProcess"
+      DTS:Description="Tarefa Executar Processo"
+      DTS:DTSID="{DC7B01AF-2809-4394-A581-0C1A4D4D6A04}"
+      DTS:ExecutableType="Microsoft.ExecuteProcess"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Tarefa Executar Processo"
+      DTS:TaskContact="Execute Process Task;Microsoft Corporation; SQL Server 2025; © 2025 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <ExecuteProcessData
+          Executable="C:\Users\USUARIO\anaconda3\python.exe"
+          Arguments="&quot;D:\projects\fraud-analytics-platform\python\05_load_ods_data.py&quot;"
+          WorkingDirectory="D:\projects\fraud-analytics-platform\python" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+  </DTS:Executables>
+  <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
+<!--Esta seção CDATA contém as informações de layout do pacote. A seção inclui informações como coordenadas (x,y), largura e altura.-->
+<!--Se você editar manualmente esta seção e cometer algum erro, poderá excluí-la. -->
+<!--O pacote ainda poderá ser carregado normalmente, mas as informações de layout anteriores serão perdidas e o designer reorganizará automaticamente os elementos na superfície de design.-->
+<Objects
+  Version="8">
+  <!--Cada nó abaixo conterá propriedades que não afetam o comportamento em tempo de execução.-->
+  <Package
+    design-time-name="Package">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph">
+        <NodeLayout
+          Size="198.4,41.6"
+          Id="Package\Tarefa Executar Processo"
+          TopLeft="249.166653052801,51.9999996383985" />
+      </GraphLayout>
+    </LayoutInfo>
+  </Package>
+</Objects>]]></DTS:DesignTimeProperties>
+</DTS:Executable>
