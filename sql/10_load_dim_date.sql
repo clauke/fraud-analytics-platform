@@ -7,7 +7,7 @@
 USE FraudAnalytics;
 GO
 
-DECLARE @DataBase DATETIME2 = '2017-12-30T00:00:00';
+DECLARE @DataBase DATETIME2 = '2017-11-30T00:00:00';
 
 INSERT INTO dwh.dim_date
 (
