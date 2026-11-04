@@ -173,13 +173,9 @@ def main():
 
     print("\nFraudes por período temporal:")
 
-    df["Periodo"] = pd.qcut(
-        df["TransactionDT"],
-        q=6,
-        labels=False
-    )
+    periodos = pd.qcut(df["TransactionDT"], q=6, labels=False)
 
-    resumo_temporal = df.groupby("Periodo", observed=True).agg(
+    resumo_temporal = df.groupby(periodos, observed=True).agg(
         TotalTransacoes=("TransactionID", "count"),
         TotalFraudes=("isFraud", "sum")
     )
