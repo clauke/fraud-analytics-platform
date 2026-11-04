@@ -1,124 +1,299 @@
-# Sprint 6 — Planejamento de Machine Learning
+# Plano de Machine Learning — Fraud Analytics Platform
+
+**Projeto:** Fraud Analytics Platform  
+**Sprint:** 6 — Machine Learning  
+**Status:** Em andamento  
+**Versão:** 1.0
+
+---
 
 ## 1. Objetivo
 
-Desenvolver e avaliar modelos de Machine Learning para detectar transações fraudulentas utilizando os dados da Fraud Analytics Platform.
+Desenvolver modelos de Machine Learning capazes de identificar transações potencialmente fraudulentas, utilizando os dados preparados nas camadas ODS e DWH do projeto Fraud Analytics Platform.
 
-O objetivo é estabelecer um modelo de referência reproduzível, avaliar sua capacidade de identificar fraudes e investigar se os atributos de identidade e dispositivo melhoram o desempenho preditivo.
+O objetivo é construir modelos de classificação, avaliar seu desempenho e identificar quais atributos contribuem de forma mais relevante para a detecção de fraudes.
+
+O desenvolvimento será realizado de forma incremental, começando por um modelo baseline e evoluindo para modelos mais sofisticados.
 
 ## 2. Problema de Negócio
 
-As transações fraudulentas representam uma pequena proporção do volume total de transações. O modelo deverá identificar operações suspeitas, equilibrando a capacidade de detecção de fraudes e a ocorrência de falsos positivos.
+Instituições financeiras precisam identificar transações fraudulentas com rapidez e precisão, reduzindo perdas financeiras e minimizando o impacto sobre clientes legítimos.
 
-A solução deverá apoiar as análises de fraude e fornecer uma base para futura integração com a camada de Business Intelligence.
+O modelo deverá auxiliar na identificação de transações suspeitas, buscando equilíbrio entre:
+
+- Detectar o maior número possível de fraudes.
+- Reduzir a quantidade de transações legítimas classificadas incorretamente como fraudulentas.
+- Oferecer resultados que possam apoiar decisões de prevenção a fraudes.
 
 ## 3. Fontes de Dados
 
-Os experimentos iniciais utilizarão as seguintes tabelas do banco de dados `FraudAnalytics`, no SQL Server:
+Serão utilizadas as tabelas da camada ODS do SQL Server:
 
-- `ods.transactions`: atributos das transações e variável-alvo.
-- `ods.identities`: atributos de identidade e dispositivo que poderão complementar os dados das transações.
+### 3.1. ods.transactions
 
-A base de treinamento contém 590.540 transações da fonte `train`, sendo:
+Contém os dados das transações financeiras, incluindo:
 
-- 20.663 transações fraudulentas.
-- 569.877 transações legítimas.
+- TransactionID
+- TransactionDT
+- TransactionAmt
+- ProductCD
+- card1 a card6
+- addr1 e addr2
+- dist1 e dist2
+- P_emaildomain
+- R_emaildomain
+- isFraud
 
-A fonte `test` contém 506.691 transações sem rótulos de fraude disponíveis. Por esse motivo, não será utilizada para calcular métricas de avaliação supervisionada.
+### 3.2. ods.identities
 
-## 4. Variável-Alvo
+Contém informações complementares relacionadas à identidade e aos dispositivos utilizados nas transações:
 
-A variável-alvo será `isFraud`:
+- id_01 a id_38
+- DeviceType
+- DeviceInfo
+- TransactionID
+
+### 3.3. Volume de dados
+
+A base de treinamento apresenta os seguintes volumes:
+
+| Conjunto | Registros | Fraudes identificadas |
+|---|---:|---:|
+| Train | 590.540 | 20.663 |
+| Test | 506.691 | Não disponível |
+
+O conjunto de teste não possui valores para a variável `isFraud`. Portanto, não será utilizado na avaliação supervisionada dos modelos nesta etapa.
+
+## 4. Variável-Alvo (Target)
+
+A variável-alvo será:
+
+**isFraud**
 
 - `1`: transação fraudulenta.
 - `0`: transação legítima.
 
-A variável-alvo e qualquer informação derivada dela não poderão ser utilizadas como variáveis preditoras.
+Essa variável será utilizada exclusivamente como alvo de treinamento e avaliação, não podendo ser utilizada como variável preditora.
 
-## 5. Variáveis Candidatas
+## 5. Seleção de Variáveis (Features)
 
-### 5.1. Atributos das Transações
+A seleção das variáveis será realizada de forma incremental.
 
-As variáveis candidatas da tabela `ods.transactions` incluem:
+### 5.1. Variáveis iniciais — Transações
 
-- `TransactionDT`
-- `TransactionAmt`
-- `ProductCD`
-- `card1`, `card2`, `card3`, `card4`, `card5`, `card6`
-- `addr1`, `addr2`
-- `dist1`, `dist2`
-- `P_emaildomain`, `R_emaildomain`
+Serão consideradas inicialmente:
 
-Inicialmente, `TransactionID` será excluída como variável preditora direta, por ser um identificador da transação.
+- TransactionDT
+- TransactionAmt
+- ProductCD
+- card1 a card6
+- addr1 e addr2
+- dist1 e dist2
+- P_emaildomain
+- R_emaildomain
 
-O uso de `TransactionDT` será avaliado considerando seu significado temporal e o risco de vazamento de informação.
+O campo `TransactionID` será mantido para identificação e integração dos dados, mas não será utilizado inicialmente como variável preditora.
 
-### 5.2. Atributos de Identidade e Dispositivo
+A variável `TransactionDT` será avaliada considerando seu comportamento temporal e os possíveis impactos sobre a generalização dos modelos.
 
-Os atributos candidatos da tabela `ods.identities` incluem:
+### 5.2. Variáveis complementares — Identidade e dispositivo
 
-- `id_01` até `id_38`
-- `DeviceType`
-- `DeviceInfo`
+Em uma segunda etapa, serão avaliadas:
 
-Essas variáveis serão avaliadas em um experimento separado para verificar sua contribuição adicional à capacidade preditiva do modelo.
+- id_01 a id_38
+- DeviceType
+- DeviceInfo
 
-### 5.3. Colunas Excluídas
+Essas variáveis serão incorporadas em um experimento separado, permitindo comparar o desempenho dos modelos com e sem informações de identidade e dispositivo.
 
-As colunas de controle operacional do processo de ETL não serão utilizadas como variáveis preditoras:
+A ausência de informações de identidade não será motivo para excluir transações da base.
 
-- `data_source`
-- `source_file`
-- `batch_id`
-- `load_date`
-- `etl_status`
+### 5.3. Variáveis excluídas
 
-A variável-alvo `isFraud` também será excluída da matriz de atributos preditores.
+Não serão utilizadas como variáveis preditoras:
+
+- isFraud, por ser a variável-alvo.
+- TransactionID, inicialmente.
+- data_source.
+- source_file.
+- batch_id.
+- load_date.
+- etl_status.
+
+Os campos de controle do processo ETL não representam características legítimas da transação para fins de previsão.
 
 ## 6. Preparação dos Dados
 
-O processo de preparação deverá:
+A preparação dos dados será realizada em Python, utilizando principalmente Pandas e Scikit-learn.
 
-1. Selecionar os registros rotulados da fonte `train`.
-2. Preservar as transações válidas, evitando excluir registros apenas por possuírem atributos ausentes.
-3. Avaliar os valores ausentes e aplicar estratégias adequadas de imputação ou tratamento de categorias ausentes.
-4. Codificar as variáveis categóricas e normalizar ou padronizar as numéricas quando necessário para o algoritmo escolhido.
-5. Ajustar as transformações utilizando exclusivamente os dados da partição de treinamento, evitando vazamento de informação.
-6. Verificar os tipos de dados, duplicidades e distribuição da variável-alvo antes do treinamento.
+As atividades previstas são:
 
-A tabela `ods.identities` será combinada com `ods.transactions` por meio de `TransactionID` e `data_source`.
+1. Carregar os dados preparados em `data/processed/fraud_ml_train.csv`.
+2. Separar as variáveis preditoras da variável-alvo.
+3. Verificar tipos de dados e valores ausentes.
+4. Tratar valores ausentes por meio de estratégias adequadas de imputação.
+5. Codificar variáveis categóricas.
+6. Aplicar normalização ou padronização às variáveis numéricas quando necessário.
+7. Preparar os conjuntos de treinamento e validação.
+8. Garantir que as transformações sejam ajustadas somente com os dados de treinamento, evitando vazamento de informações (*data leakage*).
 
-Será utilizado `LEFT JOIN` para preservar as transações que não possuam correspondência na tabela de identidades.
+A integração entre transações e identidades será realizada por meio de `TransactionID` e `data_source`, utilizando `LEFT JOIN`.
+
+Essa estratégia preserva todas as transações, inclusive aquelas sem informações complementares de identidade.
+
+A análise de qualidade confirmou que não existem duplicidades de `TransactionID` na tabela de identidades dentro de cada origem de dados, permitindo essa integração sem multiplicação de registros.
 
 ## 7. Estratégia de Modelagem
 
-O fluxo inicial de modelagem comparará dois cenários:
+O desenvolvimento dos modelos será realizado em etapas.
 
-1. **Modelo de referência:** utiliza os atributos da tabela `ods.transactions`.
-2. **Modelo enriquecido:** incorpora atributos selecionados de identidade e dispositivo da tabela `ods.identities`.
+### 7.1. Modelo Baseline
 
-Os algoritmos candidatos serão escolhidos considerando as características dos dados, a interpretabilidade, o custo computacional e os resultados de avaliação.
+Será desenvolvido inicialmente um modelo de referência utilizando as variáveis das transações.
 
-O primeiro experimento deverá estabelecer uma referência reproduzível antes da introdução de algoritmos mais complexos ou de técnicas adicionais de engenharia de atributos.
+O primeiro algoritmo considerado será a Regressão Logística (*Logistic Regression*).
+
+Esse modelo permitirá estabelecer uma referência de desempenho para as próximas experiências.
+
+### 7.2. Modelo com informações complementares
+
+Após a avaliação do baseline, serão incorporadas as variáveis de identidade e dispositivo.
+
+O objetivo será verificar se essas informações aumentam a capacidade de identificação de fraudes.
+
+### 7.3. Modelos adicionais
+
+Após os experimentos iniciais, poderão ser avaliados outros algoritmos, como:
+
+- Random Forest.
+- Gradient Boosting.
+
+A escolha dos modelos seguintes será orientada pelos resultados obtidos nas etapas anteriores.
 
 ## 8. Estratégia de Validação
 
-A base rotulada de treinamento será dividida em partições de treinamento e validação, utilizando divisão estratificada para preservar a proporção de transações fraudulentas.
+A avaliação dos modelos utilizará duas estratégias complementares.
 
-Será utilizada uma semente aleatória fixa para permitir a reprodução dos experimentos.
+### 8.1. Divisão estratificada
 
-Como a dimensão temporal pode ser relevante para a detecção de fraudes, também será considerada uma estratégia de validação cronológica para avaliar o desempenho em transações posteriores ao período de treinamento.
+Os dados serão divididos em conjuntos de treinamento e validação, preservando aproximadamente a proporção entre transações legítimas e fraudulentas.
 
-A fonte `test`, por não possuir rótulos disponíveis, não será utilizada para calcular métricas de avaliação supervisionada.
+Será utilizada uma semente aleatória fixa para garantir a reprodutibilidade dos experimentos.
+
+Essa estratégia permitirá avaliar o desempenho dos modelos em uma divisão representativa das classes.
+
+### 8.2. Divisão cronológica
+
+Também será realizada uma validação baseada na ordem temporal das transações.
+
+Nesse cenário:
+
+- As transações mais antigas serão utilizadas para treinamento.
+- As transações mais recentes serão utilizadas para validação.
+
+Essa estratégia permitirá investigar a capacidade de generalização dos modelos diante de transações futuras.
+
+A análise temporal exploratória identificou taxas de fraude entre 2,57% e 4,12% nos seis períodos avaliados:
+
+| Período | Transações | Fraudes | Taxa de fraude |
+|---|---:|---:|---:|
+| 0 | 98.424 | 2.529 | 2,57% |
+| 1 | 98.423 | 3.306 | 3,36% |
+| 2 | 98.423 | 4.059 | 4,12% |
+| 3 | 98.423 | 3.686 | 3,75% |
+| 4 | 98.423 | 3.686 | 3,75% |
+| 5 | 98.424 | 3.397 | 3,45% |
+
+A variação observada justifica investigar a generalização temporal dos modelos.
+
+Os resultados das duas estratégias serão comparados para identificar possíveis diferenças de desempenho.
+
+O conjunto `test`, por não possuir rótulos de fraude, não será utilizado para calcular métricas supervisionadas.
 
 ## 9. Métricas de Avaliação
 
-O desempenho dos modelos será avaliado utilizando:
+Considerando o objetivo de detectar fraudes, serão utilizadas as seguintes métricas:
 
-- **Precisão (Precision):** proporção das transações classificadas como fraude que realmente são fraudulentas.
-- **Revocação (Recall):** proporção das transações fraudulentas efetivamente identificadas pelo modelo.
-- **F1-score:** média harmônica entre precisão e revocação.
-- **PR-AUC:** área sob a curva de precisão e revocação, especialmente relevante para problemas de classificação desbalanceados.
-- **Matriz de confusão:** apresenta os verdadeiros positivos, falsos positivos, verdadeiros negativos e falsos negativos.
+- **Recall:** proporção de fraudes reais identificadas corretamente.
+- **Precision:** proporção das transações classificadas como fraude que realmente são fraudulentas.
+- **F1-score:** equilíbrio entre Precision e Recall.
+- **PR-AUC:** avaliação da relação entre Precision e Recall em diferentes limiares de classificação.
+- **Matriz de Confusão:** identificação de verdadeiros positivos, verdadeiros negativos, falsos positivos e falsos negativos.
 
-A acurácia poderá ser apresentada como métrica
+A acurácia (*Accuracy*) também poderá ser apresentada como informação complementar, mas não será utilizada isoladamente para avaliar os modelos.
+
+A escolha do limiar de classificação será analisada considerando o equilíbrio entre detecção de fraudes e falsos alertas.
+
+## 10. Desbalanceamento das Classes
+
+A base de treinamento apresenta forte desbalanceamento entre as classes:
+
+| Classe | Registros | Percentual |
+|---|---:|---:|
+| Transações legítimas | 569.877 | 96,50% |
+| Transações fraudulentas | 20.663 | 3,50% |
+| **Total** | **590.540** | **100%** |
+
+Esse cenário caracteriza um problema de classificação desbalanceada.
+
+Por esse motivo, a avaliação dos modelos priorizará métricas como Recall, Precision, F1-score e PR-AUC, evitando que a acurácia elevada esconda uma baixa capacidade de identificação de fraudes.
+
+Serão avaliadas estratégias para lidar com o desbalanceamento, como:
+
+- Ajuste de pesos das classes (*class_weight*).
+- Técnicas de reamostragem, caso necessário.
+
+Qualquer técnica de reamostragem será aplicada exclusivamente aos dados de treinamento, evitando interferências no conjunto de validação.
+
+## 11. Reprodutibilidade e Organização
+
+O desenvolvimento será realizado utilizando:
+
+- Python 3.11.7.
+- Pandas.
+- NumPy.
+- Scikit-learn.
+- Matplotlib.
+- Jupyter Notebook.
+
+Os scripts de preparação e experimentação serão armazenados no diretório `python/` e os notebooks de análise no diretório `notebooks/`.
+
+Os modelos treinados e seus respectivos artefatos serão armazenados no diretório `models/`.
+
+Os resultados dos experimentos e as decisões técnicas serão documentados no diretório `docs/`.
+
+A base processada será mantida localmente, sem inclusão dos arquivos de dados no repositório GitHub.
+
+## 12. Critérios de Conclusão (Definition of Done)
+
+A Sprint 6 será considerada concluída quando:
+
+- [ ] A base de treinamento estiver preparada para modelagem.
+- [ ] As variáveis preditoras e a variável-alvo estiverem definidas.
+- [ ] O tratamento de valores ausentes estiver implementado.
+- [ ] As estratégias de validação estratificada e cronológica estiverem implementadas.
+- [ ] O modelo baseline estiver treinado e avaliado.
+- [ ] As métricas de avaliação estiverem documentadas.
+- [ ] Os experimentos com informações de identidade e dispositivo estiverem realizados.
+- [ ] Pelo menos um modelo adicional tiver sido avaliado.
+- [ ] Os resultados e as conclusões estiverem documentados.
+- [ ] Os scripts, notebooks e artefatos relevantes estiverem organizados no repositório.
+
+## 13. Limitações e Considerações
+
+Durante o desenvolvimento, deverão ser consideradas as seguintes limitações:
+
+- A base apresenta forte desbalanceamento entre as classes.
+- As informações de identidade estão disponíveis para apenas parte das transações.
+- Existem valores ausentes em diversas variáveis.
+- A distribuição temporal das fraudes apresenta variações entre os períodos analisados.
+- O desempenho em uma divisão aleatória pode não representar adequadamente o desempenho em transações futuras.
+- O conjunto `test` não possui rótulos disponíveis para avaliação supervisionada nesta etapa.
+
+Os resultados obtidos serão considerados experimentais e voltados à construção do portfólio. Um modelo com bom desempenho nos testes não estará automaticamente pronto para implantação em produção.
+
+---
+
+**Documento:** Plano de Machine Learning  
+**Projeto:** Fraud Analytics Platform  
+**Sprint:** 6 — Machine Learning
