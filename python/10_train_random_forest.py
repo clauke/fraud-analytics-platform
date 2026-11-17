@@ -22,6 +22,7 @@ from sklearn.preprocessing import OrdinalEncoder
 # Fraud Analytics Platform
 # Sprint 6 - Machine Learning
 # Modelo: Random Forest
+# Nova divisao: Treinamento / Validacao / Teste
 # ============================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -31,14 +32,16 @@ MODEL_DIR = PROJECT_ROOT / "models"
 
 RANDOM_STATE = 42
 
+# ============================================================
+# VARIAVEIS PREDITORAS
+# ============================================================
+
 NUMERIC_FEATURES = [
     "TransactionDT",
     "TransactionAmt",
     "dist1",
     "dist2"
 ]
-
-# Variaveis categoricas
 
 CATEGORICAL_FEATURES = [
     "ProductCD",
@@ -55,6 +58,10 @@ CATEGORICAL_FEATURES = [
 ]
 
 TARGET = "isFraud"
+
+# ============================================================
+# CRIACAO DO PIPELINE
+# ============================================================
 
 def create_pipeline():
 
@@ -114,6 +121,10 @@ def create_pipeline():
         ]
     )
 
+# ============================================================
+# AVALIACAO DO MODELO
+# ============================================================
+
 def evaluate_model(model, X_validation, y_validation, name):
 
     predictions = model.predict(X_validation)
@@ -167,8 +178,16 @@ def evaluate_model(model, X_validation, y_validation, name):
         "Precision": precision,
         "Recall": recall,
         "F1-score": f1,
-        "PR-AUC": pr_auc
+        "PR-AUC": pr_auc,
+        "TN": int(matrix[0, 0]),
+        "FP": int(matrix[0, 1]),
+        "FN": int(matrix[1, 0]),
+        "TP": int(matrix[1, 1])
     }
+
+# ============================================================
+# EXECUCAO DE CADA EXPERIMENTO
+# ============================================================
 
 def run_experiment(train_file, validation_file, name):
 
@@ -176,7 +195,10 @@ def run_experiment(train_file, validation_file, name):
     print(f"EXPERIMENTO: {name}")
     print("#" * 60)
 
-    train_df = pd.read_csv(DATA_DIR / train_file)
+    train_df = pd.read_csv(
+        DATA_DIR / train_file
+    )
+    
     validation_df = pd.read_csv(
         DATA_DIR / validation_file
     )
@@ -193,7 +215,7 @@ def run_experiment(train_file, validation_file, name):
         errors="ignore"
     )
 
-    # Selecionar as mesmas variaveis do baseline
+    # Selecionar variaveis preditoras
 
     features = NUMERIC_FEATURES + CATEGORICAL_FEATURES
 
@@ -277,14 +299,14 @@ def run_experiment(train_file, validation_file, name):
     )
 
     model_path = MODEL_DIR / (
-        f"random_forest_{name}.joblib"
+        f"random_forest_holdout_{name}.joblib"
     )
 
     joblib.dump(pipeline, model_path)
 
     print(f"\nModelo salvo em: {model_path}")
 
-    # Liberar memória dos dados do experimento
+    # Liberar memória
 
     del X_train
     del y_train
@@ -295,22 +317,26 @@ def run_experiment(train_file, validation_file, name):
 
     return results
 
+# ============================================================
+# PROCESSO PRINCIPAL
+# ============================================================
+
 def main():
 
     print("=" * 60)
     print("Fraud Analytics Platform")
-    print("Random Forest")
+    print("Random Forest - Nova divisao")
     print("=" * 60)
 
     experiments = [
         (
-            "fraud_train_stratified.csv",
-            "fraud_validation_stratified.csv",
+            "train_stratified.csv",
+            "validation_stratified.csv",
             "stratified"
         ),
         (
-            "fraud_train_chronological.csv",
-            "fraud_validation_chronological.csv",
+            "train_chronological.csv",
+            "validation_chronological.csv",
             "chronological"
         )
     ]
@@ -332,7 +358,7 @@ def main():
     results_df = pd.DataFrame(results)
 
     results_path = (
-        DATA_DIR / "random_forest_results.csv"
+        DATA_DIR / "random_forest_holdout_results.csv"
     )
 
     results_df.to_csv(
@@ -351,7 +377,9 @@ def main():
     print(f"\nResultados salvos em: {results_path}")
     print("\nProcesso concluido com sucesso.")
 
+# ============================================================
+# EXECUCAO
+# ============================================================
+
 if __name__ == "__main__":
     main()
-
-

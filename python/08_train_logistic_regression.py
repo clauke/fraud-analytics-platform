@@ -20,7 +20,8 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 # ============================================================
 # Fraud Analytics Platform
 # Sprint 6 - Machine Learning
-# Modelo Baseline: Regressao Logistica
+# Modelo: Regressao Logistica
+# Nova divisao: Treinamento / Validacao / Teste
 # ============================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -30,7 +31,10 @@ MODEL_DIR = PROJECT_ROOT / "models"
 
 RANDOM_STATE = 42
 
-# Variáveis numéricas
+# ============================================================
+# VARIAVEIS PREDITORAS
+# ============================================================
+
 
 NUMERIC_FEATURES = [
     "TransactionDT",
@@ -38,8 +42,6 @@ NUMERIC_FEATURES = [
     "dist1",
     "dist2"
 ]
-
-# Variáveis categóricas
 
 CATEGORICAL_FEATURES = [
     "ProductCD",
@@ -56,6 +58,10 @@ CATEGORICAL_FEATURES = [
 ]
 
 TARGET = "isFraud"
+
+# ============================================================
+# CRIACAO DO PIPELINE
+# ============================================================
 
 def create_pipeline():
     
@@ -110,6 +116,10 @@ def create_pipeline():
         ]
     )
 
+# ============================================================
+# AVALIACAO DO MODELO
+# ============================================================
+
 def evaluate_model(model, X_validation, y_validation, name):
     
     predictions = model.predict(X_validation)
@@ -160,8 +170,16 @@ def evaluate_model(model, X_validation, y_validation, name):
         "Precision": precision,
         "Recall": recall,
         "F1-score": f1,
-        "PR-AUC": pr_auc
+        "PR-AUC": pr_auc,
+        "TN": int(matrix[0, 0]),
+        "FP": int(matrix[0, 1]),
+        "FN": int(matrix[1, 0]),
+        "TP": int(matrix[1, 1]),
     }
+
+# ============================================================
+# EXECUCAO DE CADA EXPERIMENTO
+# ============================================================
 
 def run_experiment(train_file, validation_file, name):
 
@@ -171,16 +189,6 @@ def run_experiment(train_file, validation_file, name):
 
     train_df = pd.read_csv(DATA_DIR / train_file)
     validation_df = pd.read_csv(DATA_DIR / validation_file)
-
-    # Remover coluna auxiliar, se existir
-    
-    train_df = train_df.drop(columns=["Periodo"], errors="ignore")
-    validation_df = validation_df.drop(
-        columns=["Periodo"],
-        errors="ignore"
-    )
-
-    # Selecionar somente as variáveis do baseline
 
     features = NUMERIC_FEATURES + CATEGORICAL_FEATURES
 
@@ -201,27 +209,35 @@ def run_experiment(train_file, validation_file, name):
     X_validation = validation_df[features].copy()
     y_validation = validation_df[TARGET].astype(int)
 
-    # Padronizar variáveis categóricas como texto,
-    # preservando valores ausentes para imputação
+    # Padronizar variaveis categoricas como texto,
+    # preservando valores ausentes para imputacao
 
     for col in CATEGORICAL_FEATURES:
+
         X_train[col] = (
             X_train[col]
             .astype(object)
             .where(X_train[col].notna(), np.nan)
-            .map(lambda value: str(value) if pd.notna(value) else np.nan)
+            .map(
+                lambda value:
+                str(value) if pd.notna(value) else np.nan
+            )
         )
 
         X_validation[col] = (
             X_validation[col]
             .astype(object)
             .where(X_validation[col].notna(), np.nan)
-            .map(lambda value: str(value) if pd.notna(value) else np.nan)
+            .map(
+                lambda value:
+                str(value) if pd.notna(value) else np.nan
+            )
         )
 
     print(f"\nRegistros de treinamento: {len(X_train):,}")
     print(f"Registros de validacao: {len(X_validation):,}")
     print(f"Features utilizadas: {len(features)}")
+
 
     # Criar e treinar o modelo
 
@@ -241,11 +257,14 @@ def run_experiment(train_file, validation_file, name):
         name
     )
 
-    # Salvar modelo treinado
+    # Salvar modelo
 
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
-    model_path = MODEL_DIR / f"baseline_logistic_{name}.joblib"
+    model_path = (
+        MODEL_DIR / 
+        f"logistic_holdout_{name}.joblib"
+    )
 
     joblib.dump(pipeline, model_path)
 
@@ -253,22 +272,26 @@ def run_experiment(train_file, validation_file, name):
 
     return results
 
+# ============================================================
+# PROCESSO PRINCIPAL
+# ============================================================
+
 def main():
 
     print("=" * 60)
     print("Fraud Analytics Platform")
-    print("Baseline - Logistic Regression")
+    print("Logistic Regression - Nova divisao")
     print("=" * 60)
 
     experiments = [
         (
-            "fraud_train_stratified.csv",
-            "fraud_validation_stratified.csv",
+            "train_stratified.csv",
+            "validation_stratified.csv",
             "stratified"
         ),
         (
-            "fraud_train_chronological.csv",
-            "fraud_validation_chronological.csv",
+            "train_chronological.csv",
+            "validation_chronological.csv",
             "chronological"
         )
     ]
@@ -289,7 +312,10 @@ def main():
 
     results_df = pd.DataFrame(results)
 
-    results_path = DATA_DIR / "baseline_logistic_results.csv"
+    results_path = (
+        DATA_DIR /
+        "logistic_holdout_results.csv"
+    )
 
     results_df.to_csv(results_path, index=False)
 
